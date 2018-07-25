@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
-import store from './store'
+import store from './store/store'
 
 import 'element-ui/lib/theme-chalk/index.css';
 import {
@@ -137,6 +137,10 @@ Vue.use(Header);
 Vue.use(Aside);
 Vue.use(Main);
 Vue.use(Footer);
+// Vue.use(Loading);
+// Vue.use(MessageBox);
+// Vue.use(Message);
+// Vue.use(Notification);
 
 Vue.config.productionTip = false;
 

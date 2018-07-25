@@ -1,10 +1,10 @@
 <template>
     <div class="header">
-        <router-link to="/">
+        <router-link to="/dashboard">
             <i class="el-icon-picture icon"></i>
         </router-link>
 
-        <router-link to="/profile">
+        <router-link to="/dashboard/profile">
             <i class="el-icon-question icon"></i>
         </router-link>
     </div>
@@ -16,7 +16,7 @@
     }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
     .header {
         display: flex;
         justify-content: space-between;

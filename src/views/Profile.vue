@@ -10,7 +10,7 @@
     }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
     .profile {
         color: darkslategrey;
     }
