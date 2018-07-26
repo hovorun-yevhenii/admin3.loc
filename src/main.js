@@ -144,6 +144,17 @@ Vue.use(Footer);
 
 Vue.config.productionTip = false;
 
+router.beforeEach((to, from, next) => {
+    const authRequired = to.matched.some((route) => route.meta.auth);
+    const authorized = store.state.auth;
+
+    if (authRequired && !authorized) {
+        next('/login')
+    } else {
+        next()
+    }
+});
+
 new Vue({
   router,
   store,

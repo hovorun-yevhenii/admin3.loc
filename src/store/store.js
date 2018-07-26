@@ -15,7 +15,9 @@ export default new Vuex.Store({
         category
     },
 
-    state: {},
+    state: {
+        auth: true,
+    },
     mutations: {},
     actions: {}
 })

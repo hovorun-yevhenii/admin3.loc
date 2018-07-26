@@ -1,45 +1,38 @@
 <template>
-<div class="dashboard">
-    <el-row>
+    <div class="dashboard">
         <Header/>
-    </el-row>
-    <el-row>
-        <el-col :span="2">
-            <el-menu default-active="1"
-                     class="el-menu-vertical-demo"
+        <div class="content">
+            <el-menu background-color="#e6e6e6"
                      :collapse="isNavCollapse"
-                     :router="true">
+                     router>
+                <div class="el-menu__toggle" @click="isNavCollapse = !isNavCollapse"></div>
 
-                <i class="el-icon-menu navToggle" @click="isNavCollapse = !isNavCollapse"></i>
-
-                <el-menu-item index="/dashboard/categories">
-                    <i class="el-icon-tickets"></i>
+                <el-menu-item index="/categories/all">
+                    <i class="el-icon-tickets" ></i>
                     <span slot="title">Категории</span>
                 </el-menu-item>
 
-                <el-menu-item index="/dashboard/users">
+                <el-menu-item index="/users/all">
                     <i class="el-icon-service"></i>
                     <span slot="title">Пользователи</span>
                 </el-menu-item>
 
-                <el-menu-item index="/dashboard/books">
+                <el-menu-item index="/books/all">
                     <i class="el-icon-goods"></i>
                     <span slot="title">Книги</span>
                 </el-menu-item>
 
-                <el-menu-item index="/dashboard/authors">
+                <el-menu-item index="/authors/all">
                     <i class="el-icon-edit-outline"></i>
                     <span slot="title">Авторы</span>
                 </el-menu-item>
             </el-menu>
-        </el-col>
 
-        <el-col :span="22">
-            <router-view />
-        </el-col>
-
-    </el-row>
-</div>
+            <div class="main">
+                <router-view/>
+            </div>
+        </div>
+    </div>
 </template>
 
 <script>
@@ -58,17 +51,49 @@
     }
 </script>
 
-<style lang="scss" scoped>
-    .navToggle {
-        display: block;
-        width: 36px;
-        margin: 24px auto;
-        font-size: 36px;
-        color: #909399;
+<style lang="scss">
+    .content {
+        display: flex;
+        flex-flow: row nowrap;
     }
 
-    .el-menu-vertical-demo:not(.el-menu--collapse) {
-        width: 200px;
-        cursor: pointer;
+    .main {
+        position: relative;
+        top: 72px;
+        padding: 24px;
+        flex: 0 1 100%;
+        border-left: 1px solid #bbb;
+    }
+
+    .el-tooltip__popper {
+        opacity: .75;
+    }
+
+    .el-menu {
+        position: fixed;
+        top: 72px;
+        left: 0;
+        min-height: calc(100vh - 72px);
+
+        &__toggle {
+            display: block;
+            width: 32px;
+            height: 32px;
+            margin: 17px;
+            background: url(../assets/img/nemu-toggle.svg) center/100% no-repeat;
+            cursor: pointer;
+            transform: rotate(-45deg);
+            opacity: .3;
+
+            &:hover {
+                opacity: .5;
+            }
+        }
+
+        &:not(.el-menu--collapse) {
+            .el-menu__toggle {
+                transform: rotate(0);
+            }
+        }
     }
 </style>

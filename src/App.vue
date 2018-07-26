@@ -5,22 +5,19 @@
 </template>
 
 <script>
-    import Dashboard from './views/Dashboard.vue'
-    import Login from './views/LoginForm.vue'
-
     export default {
         data() {
             return {
                 isNavCollapse: true,
             };
-        },
-        components: {
-            Dashboard,
-            Login
         }
     }
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
     @import './assets/css/reset.css';
+
+    #app {
+        font-family: sans-serif;
+    }
 </style>
