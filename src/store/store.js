@@ -1,3 +1,5 @@
+import VuexPersistence from 'vuex-persist'
+
 import Vue from 'vue'
 import Vuex from 'vuex'
 import user from './modules/user'
@@ -7,17 +9,29 @@ import category from './modules/category'
 
 Vue.use(Vuex);
 
+const vuexLocal = new VuexPersistence({
+    reducer: state => ({
+        user: {
+            currentUser: state.user.currentUser
+        }
+    }),
+});
+
 export default new Vuex.Store({
     modules: {
         user,
         book,
         author,
-        category
+        category,
     },
 
-    state: {
-        auth: true,
+    plugins: [vuexLocal.plugin],
+
+    getters: {
+        stateQuery: state => state.route.query,
     },
+
+    state: {},
     mutations: {},
-    actions: {}
+    actions: {},
 })

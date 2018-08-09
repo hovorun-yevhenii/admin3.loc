@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import App from './App.vue'
+import { sync } from 'vuex-router-sync'
 import router from './router'
 import store from './store/store'
 
@@ -143,20 +144,12 @@ Vue.use(Footer);
 // Vue.use(Notification);
 
 Vue.config.productionTip = false;
-
-router.beforeEach((to, from, next) => {
-    const authRequired = to.matched.some((route) => route.meta.auth);
-    const authorized = store.state.auth;
-
-    if (authRequired && !authorized) {
-        next('/login')
-    } else {
-        next()
-    }
-});
+sync(store, router);
 
 new Vue({
   router,
   store,
   render: h => h(App)
 }).$mount('#app');
+
+

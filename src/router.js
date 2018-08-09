@@ -8,33 +8,32 @@ import NotFound from './views/NotFound.vue'
 
 import Categories from './views/categories/Categories.vue'
 import CategoriesTable from './views/categories/CategoriesTable.vue'
-import CreateCategory from './views/categories/CreateCategory.vue'
 
 import Books from './views/books/Books.vue'
 import BooksTable from './views/books/BooksTable.vue'
-import CreateBook from './views/books/CreateBook.vue'
+import BookForm from './views/books/BookForm.vue'
 
 import Authors from './views/authors/Authors.vue'
 import AuthorsTable from './views/authors/AuthorsTable.vue'
-import CreateAuthor from './views/authors/CreateAuthor.vue'
+import AuthorForm from './views/authors/AuthorForm.vue'
 
 import Users from './views/users/Users.vue'
 import UsersTable from './views/users/UsersTable.vue'
-import CreateUser from './views/users/CreateUser.vue'
-import EditUser from './views/users/EditUser.vue'
+import UserForm from './views/users/UserForm.vue'
 
 Vue.use(Router);
+
+// json-server --watch db.json --port 3000 --delay 1000
 
 export default new Router({
     mode: 'history',
     routes: [
-
         {
             path: '/login',
             name: 'login',
             component: LoginForm,
             beforeEnter: (to, from, next) => {
-                if(store.state.auth) {
+                if (store.state.user.currentUser) {
                     next('/')
                 } else {
                     next()
@@ -45,44 +44,47 @@ export default new Router({
             path: '/',
             name: 'dashboard',
             component: Dashboard,
-            meta: { auth: true },
             redirect: '/categories/all',
+            beforeEnter: (to, from, next) => {
+                if (store.state.user.currentUser) {
+                    next()
+                } else {
+                    next('/login')
+                }
+            },
             children: [
                 {
                     path: 'categories',
                     name: 'categories',
                     component: Categories,
+                    redirect: '/categories/all',
                     children: [
                         {
                             path: 'all',
                             component: CategoriesTable,
-                        },
-                        {
-                            path: 'add',
-                            component: CreateCategory,
-                        },
-                        {
-                            path: 'edit',
-                            component: CreateCategory,
-                        },
+                        }
                     ],
                 },
                 {
-                    path: 'users/:id?',
+                    path: 'users',
                     name: 'users',
                     component: Users,
+                    redirect: '/users/all',
                     children: [
                         {
-                            path: 'all',
+                            path: 'all/',
+                            name: 'usersList',
                             component: UsersTable,
                         },
                         {
                             path: 'add',
-                            component: CreateUser,
+                            name: 'addUser',
+                            component: UserForm
                         },
                         {
-                            path: 'edit',
-                            component: EditUser,
+                            path: ':id/edit',
+                            name: 'editUser',
+                            component: UserForm
                         },
                     ],
                 },
@@ -90,18 +92,22 @@ export default new Router({
                     path: 'books',
                     name: 'books',
                     component: Books,
+                    redirect: '/books/all',
                     children: [
                         {
                             path: 'all',
+                            name: 'booksTable',
                             component: BooksTable,
                         },
                         {
                             path: 'add',
-                            component: CreateBook,
+                            name: 'addBook',
+                            component: BookForm,
                         },
                         {
-                            path: 'edit',
-                            component: CreateBook,
+                            path: ':id/edit',
+                            name: 'editBook',
+                            component: BookForm,
                         },
                     ],
                 },
@@ -109,18 +115,22 @@ export default new Router({
                     path: 'authors',
                     name: 'authors',
                     component: Authors,
+                    redirect: '/authors/all',
                     children: [
                         {
                             path: 'all',
+                            name: 'authorsTable',
                             component: AuthorsTable,
                         },
                         {
                             path: 'add',
-                            component: CreateAuthor,
+                            name: 'addAuthor',
+                            component: AuthorForm,
                         },
                         {
-                            path: 'edit',
-                            component: CreateAuthor,
+                            path: ':id/edit',
+                            name: 'editAuthor',
+                            component: AuthorForm,
                         },
                     ],
                 },
