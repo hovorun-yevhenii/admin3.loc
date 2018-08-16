@@ -32,22 +32,29 @@
         <el-table v-show="getAuthors && getAuthors.length"
                   :data="getAuthors"
                   ref="table"
-                  @sort-change="handleSort">
+                  @sort-change="handleSort"
+                  @selection-change="handleSelection">
 
             <el-table-column label="ID" width="45">
                 <template slot-scope="scope"><span>{{ scope.row.id }}</span></template>
             </el-table-column>
 
             <el-table-column label="Name" sortable="custom" prop="name" width="200">
-                <template slot-scope="scope"><span style="font-weight: bold">{{ scope.row.name }}</span></template>
+                <template slot-scope="scope">
+                    <span style="font-weight: bold">{{ scope.row.name }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Born at" sortable="custom" prop="born_at" width="120">
-                <template slot-scope="scope"><span>{{ getTimeFormat(scope.row.born_at) }}</span></template>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.born_at }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Died at" sortable="custom" prop="died_at" width="120">
-                <template slot-scope="scope"><span>{{ getTimeFormat(scope.row.died_at) }}</span></template>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.died_at }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Country" prop="country" width="200">
@@ -93,14 +100,12 @@
 </template>
 
 <script>
-    import {debounce} from 'underscore'
-    import {mapObject} from 'underscore'
-    import moment from 'moment/src/moment';
-    import {mapGetters} from 'vuex'
-    import {MessageBox} from 'element-ui'
+    import { debounce, mapObject } from 'underscore';
+    import { mapGetters } from 'vuex';
+    import { MessageBox } from 'element-ui';
 
     export default {
-        name: "AuthorsTable",
+        name: 'AuthorsTable',
         data() {
             return {
                 dataQuery: {
@@ -108,9 +113,9 @@
                     _order: '',
                     _page: 1,
                     name_like: '',
-                    country_like: ''
-                }
-            }
+                    country_like: '',
+                },
+            };
         },
 
         computed: {
@@ -118,8 +123,9 @@
                 'getAuthors',
                 'getAuthorsTotalCount',
                 'authorsHaveNextPage',
-                'stateQuery'
-            ])
+                'stateQuery',
+                'getCurrentUser',
+            ]),
         },
 
         watch: {
@@ -130,13 +136,17 @@
         },
 
         methods: {
-            handleSearch: debounce(function() {
+            handleSelection(rows) {
+                console.log(rows);
+            },
+// eslint-disable-next-line
+            handleSearch: debounce(function () {
                 this.dataQuery._page = 1;
                 this.pushToRouter();
             }, 500),
 
             pushToRouter() {
-                this.$router.push({query: this.dataQuery});
+                this.$router.push({ query: this.dataQuery });
             },
 
             applyRouterQuery() {
@@ -152,18 +162,17 @@
 
                 this.$refs.table.sort(
                     this.dataQuery._sort,
-                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending'
+                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending',
                 );
             },
 
             fetchAuthors() {
-                let url = [
-                    `http://localhost:3000/authors?`,
-                    `_page=${this.dataQuery._page}`,
+                const url = [
+                    `/authors?_page=${this.dataQuery._page}`,
                     `&_sort=${this.dataQuery._sort}`,
                     `&_order=${this.dataQuery._order}`,
                     `&name_like=${this.dataQuery.name_like}`,
-                    `&country_like=${this.dataQuery.country_like}`
+                    `&country_like=${this.dataQuery.country_like}`,
                 ].join('');
 
                 this.$store.dispatch('fetchAuthors', url)
@@ -180,8 +189,7 @@
                 }
 
                 if (this.dataQuery._order !== this.stateQuery._order ||
-                    this.dataQuery._sort  !== this.stateQuery._sort)
-                {
+                    this.dataQuery._sort !== this.stateQuery._sort) {
                     this.dataQuery._page = 1;
                     this.pushToRouter();
                 }
@@ -204,30 +212,24 @@
             },
 
             handleDelete(id) {
-                MessageBox.confirm(
-                    `This will permanently delete this author. Continue?`,
-                    'Warning',
-                    {confirmButtonText: 'OK', cancelButtonText: 'Cancel'})
+                MessageBox.confirm('This will permanently delete this author. Continue?')
                     .then(() => this.$store.dispatch('deleteAuthor', id))
                     .then(() => {
                         if (this.getAuthors.length === 1) {
-                            this.discardQueries()
+                            this.discardQueries();
                         } else {
                             this.fetchAuthors();
                         }
                     })
-                    .catch(() => false)
+                    .catch(() => false);
             },
-            getTimeFormat(iso) {
-                return moment(iso).format('Do MMM YY')
-            }
         },
 
         created() {
             this.applyRouterQuery();
             this.fetchAuthors();
-        }
-    }
+        },
+    };
 </script>
 
 <style scoped>

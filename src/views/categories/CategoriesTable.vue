@@ -6,65 +6,36 @@
             <el-breadcrumb-item>All</el-breadcrumb-item>
         </el-breadcrumb>
 
-        <div class="controls">
-            <el-input class="input-filter"
-                      placeholder="Name"
-                      @input="handleSearch"
-                      v-model="dataQuery.name_like"
-                      clearable></el-input>
-            <div>
-                <el-button type="info" plain @click="handleEdit()">Create category</el-button>
-            </div>
-        </div>
-
-        <el-table v-show="false" v-if="getCategories && getCategories.length" :data="getCategories">
-
-            <el-table-column
-                    label="ID"
-                    width="45">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.id }}</span>
-                </template>
-            </el-table-column>
-
-            <el-table-column
-                    label="Name"
-                    prop="name"
-                    width="150">
-                <template slot-scope="scope">
-                    <span>{{ scope.row.name }}</span>
-                </template>
-            </el-table-column>
-
-            <el-table-column
-                    label="Books"
-                    prop="amount"
-                    width="70">
-                <template slot-scope="scope">
-                    <span>{{ Math.ceil(Math.random() * 100)}}</span>
-                </template>
-            </el-table-column>
-
-            <el-table-column
-                    label="Actions"
-                    width="120">
-                <template slot-scope="scope">
-                    <el-tooltip :content="'Edit ' + scope.row.name + ' category'">
-                        <el-button type="primary"
-                                   icon="el-icon-edit"
-                                   size="mini"
-                                   @click="handleEdit(scope.row)"/>
-                    </el-tooltip>
-                    <el-tooltip :content="'Delete ' + scope.row.name + ' category'">
-                        <el-button type="danger"
-                                   icon="el-icon-delete"
-                                   size="mini"
-                                   @click="handleDelete(scope.row.id, scope.row.name)"/>
-                    </el-tooltip>
-                </template>
-            </el-table-column>
-
-        </el-table>
+        <el-tree :data="treeData"
+                 node-key="id"
+                 :expand-on-click-node="false">
+          <span class="custom-tree-node" slot-scope="{ node, data }">
+            <span>{{ data.name }}</span>
+            <span>
+                 <el-tooltip content="Edit category">
+                    <el-button type="primary"
+                               icon="el-icon-edit"
+                               size="mini"
+                               plain
+                               @click="handleEdit(data)"/>
+                 </el-tooltip>
+                <el-tooltip content="Delete category">
+                    <el-button type="danger"
+                               icon="el-icon-delete"
+                               size="mini"
+                               plain
+                               @click="handleDelete(data)"/>
+                </el-tooltip>
+                <el-tooltip v-if="!data.parent_id" content="Add subcategory">
+                    <el-button type="warning"
+                               icon="el-icon-circle-plus-outline"
+                               size="mini"
+                               plain
+                               @click="handleAdd(data)"/>
+                </el-tooltip>
+            </span>
+          </span>
+        </el-tree>
 
         <div v-if="!getCategories || !getCategories.length" class="nothing-found">
             <p>Nothing found</p>
@@ -73,40 +44,29 @@
             </router-link>
         </div>
 
-        <el-pagination
-                v-if="categoriesHaveNextPage"
-                class="pagination"
-                background
-                layout="prev, pager, next"
-                @current-change="handlePagination"
-                :current-page="Number(dataQuery._page)"
-                :total="Number(categoriesTotalCount)">
-        </el-pagination>
-
-        {{ getCategories }}
-        <!-- @node-click="handleNodeClick" -->
-        <el-tree :data="getCategories" :props="treeProps"></el-tree>
+        <div class="controls">
+            <el-button type="info" plain @click="handleAdd">Create category</el-button>
+        </div>
     </div>
 </template>
 
 <script>
-    import {mapGetters} from 'vuex'
-    import {MessageBox} from 'element-ui'
-    import {Notification} from 'element-ui'
-    import {debounce} from 'underscore'
+    import { mapGetters } from 'vuex';
+    import { MessageBox, Notification } from 'element-ui';
 
     export default {
-        name: "CategoriesTable",
+        name: 'CategoriesTable',
         data() {
             return {
                 dataQuery: {
                     _page: '',
-                    name_like: ''
+                    name_like: '',
                 },
                 treeProps: {
                     label: 'name',
                 },
-            }
+                treeData: [],
+            };
         },
 
         computed: {
@@ -114,114 +74,167 @@
                 'getCategories',
                 'categoriesTotalCount',
                 'categoriesHaveNextPage',
-                'stateQuery'
+                'stateQuery',
+                'getCurrentUser',
             ]),
         },
 
         watch: {
             stateQuery() {
-                this.applyRouterQuery();
                 this.fetchCategories();
             },
         },
 
         methods: {
-            disabledTree(data, node) {
-                return data.parent_id
-            },
+            snapshotCategories() {
+                this.treeData = [];
 
-            applyRouterQuery() {
-                this.dataQuery._page = this.stateQuery._page || '';
-                this.dataQuery.name_like = this.stateQuery.name_like || '';
-            },
+                this.getCategories.forEach((category) => {
+                    if (!category.parent_id) {
+                        Object.assign(category, { children: [] });
+                        this.treeData.push(category);
+                    }
+                });
 
-            pushToRouter() {
-                this.$router.push({query: this.dataQuery});
+                this.treeData.forEach((category) => {
+                    this.getCategories.forEach((nestedCategory) => {
+                        if (nestedCategory.parent_id === category.id) {
+                            category.children.push(nestedCategory);
+                        }
+                    });
+                });
             },
 
             fetchCategories() {
-                let url = [
-                    `http://localhost:3000/categories?`,
-                    `_page=${this.dataQuery._page}`,
-                    `&name_like=${this.dataQuery.name_like}`,
-                ].join('');
-
-                this.$store.dispatch('fetchCategories', url)
+                this.$store.dispatch('fetchCategories', '/categories')
+                    .then(() => this.snapshotCategories());
             },
 
-            handleSearch: debounce(function () {
-                this.dataQuery._page = 1;
-                this.pushToRouter();
-            }, 500),
-
             handleEdit(category = {}) {
-                const editMode = typeof category.id !== 'undefined',
-                    inputValue = editMode ? category.name : '',
-                    restMethod = editMode ? 'updateCategory' : 'addCategory';
-
-                MessageBox.prompt(`Please, input new category title`,
-                    `${editMode ? 'Update category' : 'Add category'}`, {
+                MessageBox.prompt(
+                    'Please, enter new category title',
+                    'Update category', {
                         confirmButtonText: 'OK',
                         cancelButtonText: 'Cancel',
                         inputPattern: /.{3,}/,
-                        inputValue,
-                        inputErrorMessage: '3 characters minimum'
-                    })
-                    .then(input => {
-                        category.name = input.value;
+                        inputValue: category.name,
+                        inputErrorMessage: '3 characters minimum',
+                    },
+                )
+                    .then((input) => {
+                        const updatedCategory = Object.assign(
+                            category,
+                            { name: input.value },
+                        );
 
-                        this.$store.dispatch(restMethod, category)
-                            .then(result => {
+                        this.$store.dispatch('updateCategory', updatedCategory)
+                            .then((result) => {
                                 if (result) {
-                                    Notification.info({title: `Category has been ${editMode ? 'updated' : 'added'}`})
+                                    Notification.info({ title: 'Category has been updated' });
                                 }
                             });
                     })
                     .catch(() => false);
             },
 
-            handleDelete(id, name) {
-                MessageBox.confirm(`This will permanently delete ${name} category. Continue?`, 'Warning', {
-                    confirmButtonText: 'OK',
-                    cancelButtonText: 'Cancel'
-                }).then(() => {
-                    this.$store.dispatch('deleteCategory', id)
-                        .then(result => {
+            handleDelete(category) {
+                MessageBox.confirm('This will permanently delete this category. Continue?')
+                    .then(() => {
+                    this.$store.dispatch('deleteCategory', category.id)
+                        .then((result) => {
                             if (result) {
-                                Notification.info({title: 'Category has been deleted'})
+                                Notification.info({ title: 'Category has been deleted' });
+                                this.snapshotCategories();
                             } else {
-                                Notification.error({title: 'Something went wrong'})
+                                Notification.error({ title: 'Something went wrong' });
                             }
                         });
-
-                    this.$router.push({path: '/'});
-                }).catch(() => {
-                    return false
-                });
+                }).catch(() => false);
             },
 
-            handlePagination(newPage) {
-                this.dataQuery._page = newPage;
-                this.pushToRouter();
+            handleAdd(parentCategory) {
+                MessageBox.prompt(
+                    'Please, enter new category title',
+                    'Create category', {
+                        confirmButtonText: 'OK',
+                        cancelButtonText: 'Cancel',
+                        inputPattern: /.{3,}/,
+                        inputErrorMessage: '3 characters minimum',
+                    },
+                )
+                    .then((input) => {
+                        this.$store.dispatch('addCategory', {
+                            parent_id: parentCategory.id || null,
+                            name: input.value,
+                        })
+                            .then((result) => {
+                                if (result) {
+                                    Notification.info({ title: 'Category has been created' });
+                                    this.fetchCategories();
+                                } else {
+                                    Notification.error({ title: 'Something went wrong' });
+                                }
+                            });
+                    })
+                    .catch(() => false);
             },
         },
         created() {
-            this.applyRouterQuery();
             this.fetchCategories();
-        }
-    }
+        },
+    };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
+    .custom-tree-node {
+        min-width: 400px;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
     .categories-table {
         padding-top: 60px;
+    }
+
+    .el-tree-node {
+        padding: 10px;
+    }
+
+    .el-tree-node__label {
+        padding: 15px 45px;
+        font-weight: bold;
+        background-color: #F2F6FC;
+        width: 100%;
+
+        &:focus {
+            outline: none;
+        }
+    }
+
+    .el-tree-node__children .el-tree-node__label {
+        font-weight: lighter;
+        padding: 10px;
+        background-color: transparent;
+    }
+
+    .el-tree-node__children .el-tree-node {
+        padding: 5px 15px;
+
+        &:before {
+            content: '-';
+            position: relative;
+            top: 20px;
+            left: 25px;
+        }
     }
 
     .controls {
         display: flex;
         justify-content: space-between;
         width: 100%;
-        padding-bottom: 60px;
+        padding-top: 60px;
 
         & > * {
             margin: 0;

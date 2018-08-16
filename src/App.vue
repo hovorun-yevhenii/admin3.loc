@@ -5,8 +5,8 @@
 </template>
 
 <script>
-    import {Notification} from 'element-ui'
-    import {mapGetters} from 'vuex'
+    import { Notification } from 'element-ui';
+    import { mapGetters } from 'vuex';
 
     export default {
         computed: {
@@ -16,10 +16,10 @@
             getNetworkError() {
                 Notification.error({
                     title: 'Network error',
-                })
+                });
             },
-        }
-    }
+        },
+    };
 </script>
 
 <style lang="scss">

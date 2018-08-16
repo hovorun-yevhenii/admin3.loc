@@ -1,25 +1,25 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import store from './store/store'
+import Vue from 'vue';
+import Router from 'vue-router';
+import store from './store/store';
 
-import LoginForm from './views/LoginForm.vue'
-import Dashboard from './views/Dashboard.vue'
-import NotFound from './views/NotFound.vue'
+import LoginForm from './views/LoginForm';
+import Dashboard from './views/Dashboard';
+import NotFound from './views/NotFound';
 
-import Categories from './views/categories/Categories.vue'
-import CategoriesTable from './views/categories/CategoriesTable.vue'
+import Categories from './views/categories/Categories';
+import CategoriesTable from './views/categories/CategoriesTable';
 
-import Books from './views/books/Books.vue'
-import BooksTable from './views/books/BooksTable.vue'
-import BookForm from './views/books/BookForm.vue'
+import Books from './views/books/Books';
+import BooksTable from './views/books/BooksTable';
+import BookForm from './views/books/BookForm';
 
-import Authors from './views/authors/Authors.vue'
-import AuthorsTable from './views/authors/AuthorsTable.vue'
-import AuthorForm from './views/authors/AuthorForm.vue'
+import Authors from './views/authors/Authors';
+import AuthorsTable from './views/authors/AuthorsTable';
+import AuthorForm from './views/authors/AuthorForm';
 
-import Users from './views/users/Users.vue'
-import UsersTable from './views/users/UsersTable.vue'
-import UserForm from './views/users/UserForm.vue'
+import Users from './views/users/Users';
+import UsersTable from './views/users/UsersTable';
+import UserForm from './views/users/UserForm';
 
 Vue.use(Router);
 
@@ -34,9 +34,9 @@ export default new Router({
             component: LoginForm,
             beforeEnter: (to, from, next) => {
                 if (store.state.user.currentUser) {
-                    next('/')
+                    next('/');
                 } else {
-                    next()
+                    next();
                 }
             },
         },
@@ -47,9 +47,9 @@ export default new Router({
             redirect: '/categories/all',
             beforeEnter: (to, from, next) => {
                 if (store.state.user.currentUser) {
-                    next()
+                    next();
                 } else {
-                    next('/login')
+                    next('/login');
                 }
             },
             children: [
@@ -61,8 +61,9 @@ export default new Router({
                     children: [
                         {
                             path: 'all',
+                            name: 'categoriesList',
                             component: CategoriesTable,
-                        }
+                        },
                     ],
                 },
                 {
@@ -75,16 +76,22 @@ export default new Router({
                             path: 'all/',
                             name: 'usersList',
                             component: UsersTable,
+                            meta: {
+                                seniorOnly: true,
+                            },
                         },
                         {
                             path: 'add',
                             name: 'addUser',
-                            component: UserForm
+                            component: UserForm,
+                            meta: {
+                                seniorOnly: true,
+                            },
                         },
                         {
                             path: ':id/edit',
                             name: 'editUser',
-                            component: UserForm
+                            component: UserForm,
                         },
                     ],
                 },
@@ -134,7 +141,7 @@ export default new Router({
                         },
                     ],
                 },
-            ]
+            ],
         },
         {
             path: '*',
@@ -145,5 +152,5 @@ export default new Router({
             name: 'NotFound',
             component: NotFound,
         },
-    ]
-})
+    ],
+});

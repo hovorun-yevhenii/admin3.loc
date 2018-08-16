@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../myAxios';
 
 export default {
     state: {
@@ -84,71 +84,70 @@ export default {
 
                 commit('FETCH_AUTHORS_SUCCESS', {
                     authorsList: response.data,
-                    total: response.headers['x-total-count']
+                    total: response.headers['x-total-count'],
                 });
-
             } catch (error) {
-                commit('FETCH_AUTHORS_ERROR', error.message)
+                commit('FETCH_AUTHORS_ERROR', error.message);
             }
         },
 
-        async addAuthor({commit}, author) {
+        async addAuthor({ commit }, author) {
             try {
                 commit('FETCH_ADD_AUTHOR_REQUEST');
 
-                const response = await axios.post(`http://localhost:3000/authors`, author);
+                const response = await axios.post('/authors', author);
 
                 commit('FETCH_ADD_AUTHOR_SUCCESS');
 
                 return response;
-
             } catch (error) {
                 commit('FETCH_ADD_AUTHOR_ERROR', error.message);
+                return false;
             }
         },
 
-        async deleteAuthor({commit}, id) {
+        async deleteAuthor({ commit }, id) {
             try {
                 commit('FETCH_DEL_AUTHOR_REQUEST');
 
-                const response = await axios.delete(`http://localhost:3000/authors/${id}`);
+                const response = await axios.delete(`/authors/${id}`);
 
                 commit('FETCH_DEL_AUTHOR_SUCCESS');
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_DEL_AUTHOR_ERROR', error.message)
+                commit('FETCH_DEL_AUTHOR_ERROR', error.message);
+                return false;
             }
         },
 
-        async updateAuthor({commit}, author) {
+        async updateAuthor({ commit }, author) {
             try {
                 commit('FETCH_UPDATE_AUTHOR_REQUEST');
 
-                const response = await axios.put(`http://localhost:3000/authors/${author.id}`, author);
+                const response = await axios.put(`/authors/${author.id}`, author);
 
                 commit('FETCH_UPDATE_AUTHOR_SUCCESS');
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_UPDATE_AUTHOR_ERROR', error.message)
+                commit('FETCH_UPDATE_AUTHOR_ERROR', error.message);
+                return false;
             }
         },
-        async fetchAuthorById({commit}, id) {
+        async fetchAuthorById({ commit }, id) {
             try {
                 commit('FETCH_AUTHOR_BY_ID_REQUEST');
 
-                const response = await axios.get(`http://localhost:3000/authors/${id}`);
+                const response = await axios.get(`/authors/${id}`);
 
                 commit('FETCH_AUTHOR_BY_ID_SUCCESS');
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_AUTHOR_BY_ID_ERROR', error.message)
+                commit('FETCH_AUTHOR_BY_ID_ERROR', error.message);
+                return false;
             }
         },
     },
-}
+};

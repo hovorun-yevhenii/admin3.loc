@@ -9,13 +9,13 @@
         <div class="controls">
             <div>
                 <el-input class="input-filter"
-                          placeholder="Author"
+                          placeholder="Author ID"
                           @input="handleSearch"
                           v-model="dataQuery.author_like"
                           clearable>
                 </el-input>
                 <el-input class="input-filter"
-                          placeholder="Category"
+                          placeholder="Category ID"
                           @input="handleSearch"
                           v-model="dataQuery.category_like"
                           clearable>
@@ -28,34 +28,48 @@
             </div>
         </div>
 
+        <div class="multi-actions" v-if="tableSelection.length">
+            <el-button type="danger" plain @click="handleMultiAction('multiBooksDel')">
+                Delete selected books</el-button>
+        </div>
+
         <el-table v-show="getBooks && getBooks.length"
                   :data="getBooks"
                   ref="table"
-                  @sort-change="handleSort">
+                  @sort-change="handleSort"
+                  @selection-change="handleSelection">
 
             <el-table-column label="ID" width="45">
                 <template slot-scope="scope"><span>{{ scope.row.id }}</span></template>
             </el-table-column>
 
             <el-table-column label="Name" sortable="custom" prop="name" width="250">
-                <template slot-scope="scope"><span style="font-weight: bold">{{ scope.row.name }}</span></template>
+                <template slot-scope="scope">
+                    <span style="font-weight: bold">{{ scope.row.name }}</span>
+                </template>
             </el-table-column>
 
-            <el-table-column label="Author" sortable="custom" prop="author" width="70">
-                <template slot-scope="scope"><span>{{ scope.row.author }}</span></template>
+            <el-table-column label="Author" sortable="custom" prop="author" width="100">
+                <template slot-scope="scope">
+                    <span>{{ scope.row.author }}</span>
+                </template>
             </el-table-column>
 
-            <el-table-column label="Category" sortable="custom" prop="category" width="100">
-                <template slot-scope="scope"><span>{{ scope.row.category }}</span></template>
+            <el-table-column label="Category" sortable="custom" prop="category" width="120">
+                <template slot-scope="scope">
+                    <span>{{ getCategoryById(scope.row.category) }}</span>
+                </template>
             </el-table-column>
 
-            <el-table-column label="Pages" sortable="custom" prop="pages" width="70">
+            <el-table-column label="Pages" sortable="custom" prop="pages" width="100">
                 <template slot-scope="scope"><span>{{ scope.row.pages }}</span></template>
             </el-table-column>
 
             <el-table-column label="Cover" width="70">
                 <template slot-scope="scope">
-                    <span class="cover-wrapper"><img class="cover" :src="scope.row.image" alt="cover"></span>
+                    <span class="cover-wrapper">
+                        <img class="cover" :src="scope.row.image" alt="cover">
+                    </span>
                 </template>
             </el-table-column>
 
@@ -64,11 +78,15 @@
             </el-table-column>
 
             <el-table-column label="Description" width="600">
-                <template slot-scope="scope"><span style="font-size: .75rem">{{ scope.row.description }}</span></template>
+                <template slot-scope="scope">
+                    <span style="font-size: .75rem">{{ scope.row.description }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Written at" sortable="custom" prop="created_at" width="130">
-                <template slot-scope="scope"><span>{{ getTimeFormat(scope.row.created_at) }}</span></template>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.created_at }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Actions" width="120">
@@ -83,13 +101,18 @@
                         <el-button type="danger"
                                    icon="el-icon-delete"
                                    size="mini"
-                                   @click="handleDelete(scope.row.id)"/>
+                                   @click="handleDelete(scope.row)"/>
                     </el-tooltip>
                 </template>
             </el-table-column>
 
             <el-table-column type="selection" width="50"></el-table-column>
         </el-table>
+
+        <div class="multi-actions" v-if="tableSelection.length">
+            <el-button type="danger" plain @click="handleMultiAction('multiBooksDel')">
+                Delete selected books</el-button>
+        </div>
 
         <div v-if="!getBooks || !getBooks.length" class="nothing-found">
             <p>Nothing found</p>
@@ -109,14 +132,13 @@
 </template>
 
 <script>
-    import {debounce} from 'underscore'
-    import {mapObject} from 'underscore'
-    import moment from 'moment/src/moment';
-    import {mapGetters} from 'vuex'
-    import {MessageBox} from 'element-ui'
+    import { debounce, mapObject } from 'underscore';
+    import moment from 'moment';
+    import { mapGetters } from 'vuex';
+    import { MessageBox } from 'element-ui';
 
     export default {
-        name: "BooksTable",
+        name: 'BooksTable',
         data() {
             return {
                 dataQuery: {
@@ -124,9 +146,10 @@
                     _order: '',
                     _page: 1,
                     author_like: '',
-                    category_like: ''
-                }
-            }
+                    category_like: '',
+                },
+                tableSelection: [],
+            };
         },
 
         computed: {
@@ -134,8 +157,10 @@
                 'getBooks',
                 'getBooksTotalCount',
                 'booksHaveNextPage',
-                'stateQuery'
-            ])
+                'stateQuery',
+                'categoriesList',
+                'getCurrentUser',
+            ]),
         },
 
         watch: {
@@ -146,13 +171,42 @@
         },
 
         methods: {
-            handleSearch: debounce(function() {
+            handleSelection(rows) {
+                this.tableSelection = rows;
+            },
+
+            handleMultiAction(action) {
+                MessageBox.confirm('Are you sure?')
+                    .then(() => {
+                        const booksForServer = this.tableSelection.slice(0);
+
+                        this.$store.dispatch(action, booksForServer)
+                            .then(() => {
+                                if (this.getBooks.length === 1) {
+                                    this.discardQueries();
+                                } else {
+                                    this.fetchBooks();
+                                }
+
+                                this.tableSelection = [];
+                            });
+                    })
+                    .catch(() => false);
+            },
+
+            getCategoryById(id) {
+                const category = this.categoriesList.find(item => item.id === id);
+
+                return category ? category.name : '-';
+            },
+// eslint-disable-next-line
+            handleSearch: debounce(function () {
                 this.dataQuery._page = 1;
                 this.pushToRouter();
             }, 500),
 
             pushToRouter() {
-                this.$router.push({query: this.dataQuery});
+                this.$router.push({ query: this.dataQuery });
             },
 
             applyRouterQuery() {
@@ -168,18 +222,17 @@
 
                 this.$refs.table.sort(
                     this.dataQuery._sort,
-                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending'
+                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending',
                 );
             },
 
             fetchBooks() {
-                let url = [
-                    `http://localhost:3000/books?`,
-                    `_page=${this.dataQuery._page}`,
+                const url = [
+                    `/books?_page=${this.dataQuery._page}`,
                     `&_sort=${this.dataQuery._sort}`,
                     `&_order=${this.dataQuery._order}`,
                     `&author_like=${this.dataQuery.author_like}`,
-                    `&category_like=${this.dataQuery.category_like}`
+                    `&category_like=${this.dataQuery.category_like}`,
                 ].join('');
 
                 this.$store.dispatch('fetchBooks', url)
@@ -196,8 +249,7 @@
                 }
 
                 if (this.dataQuery._order !== this.stateQuery._order ||
-                    this.dataQuery._sort  !== this.stateQuery._sort)
-                {
+                    this.dataQuery._sort !== this.stateQuery._sort) {
                     this.dataQuery._page = 1;
                     this.pushToRouter();
                 }
@@ -219,34 +271,37 @@
                 this.$router.push({ name: 'editBook', params: { id } });
             },
 
-            handleDelete(id) {
-                MessageBox.confirm(
-                    `This will permanently delete this book. Continue?`,
-                    'Warning',
-                    {confirmButtonText: 'OK', cancelButtonText: 'Cancel'})
-                    .then(() => this.$store.dispatch('deleteBook', id))
+            handleDelete(book) {
+                MessageBox.confirm('This will permanently delete this book. Continue?')
+                    .then(() => this.$store.dispatch('deleteBook', book))
                     .then(() => {
                         if (this.getBooks.length === 1) {
-                            this.discardQueries()
+                            this.discardQueries();
                         } else {
                             this.fetchBooks();
                         }
                     })
-                    .catch(() => false)
+                    .catch(() => false);
             },
+
             getTimeFormat(iso) {
-                return moment(iso).format('Do MMM YY')
-            }
+                return moment(iso).format('Do MMM YY');
+            },
         },
 
         created() {
             this.applyRouterQuery();
             this.fetchBooks();
-        }
-    }
+        },
+    };
 </script>
 
 <style lang="scss" scoped>
+    .multi-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
     .controls {
         display: flex;
         align-items: center;

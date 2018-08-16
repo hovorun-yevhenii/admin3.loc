@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../myAxios';
 
 export default {
     state: {
@@ -11,7 +11,7 @@ export default {
     getters: {
         getCategories: state => state.categoriesList,
         categoriesTotalCount: state => state.categoriesTotalCount,
-        categoriesHaveNextPage: state => state.categoriesTotalCount > 10
+        categoriesHaveNextPage: state => state.categoriesTotalCount > 10,
     },
 
     mutations: {
@@ -43,7 +43,11 @@ export default {
         FETCH_DEL_CATEGORY_REQUEST(state) {
             state.isLoading = true;
         },
-        FETCH_DEL_CATEGORY_SUCCESS(state) {
+        FETCH_DEL_CATEGORY_SUCCESS(state, id) {
+            state.categoriesList.forEach((category, index) => {
+                if (category.id === id) state.categoriesList.splice(index, 1);
+            });
+
             state.isLoading = false;
         },
         FETCH_DEL_CATEGORY_ERROR(state, error) {
@@ -54,7 +58,12 @@ export default {
         FETCH_UPDATE_CATEGORY_REQUEST(state) {
             state.isLoading = true;
         },
-        FETCH_UPDATE_CATEGORY_SUCCESS(state) {
+        FETCH_UPDATE_CATEGORY_SUCCESS(state, updatedCategory) {
+            state.categoriesList.forEach((category, index) => {
+                if (category.id === updatedCategory.id) {
+                    state.categoriesList[index] = updatedCategory;
+                }
+            });
             state.isLoading = false;
         },
         FETCH_UPDATE_CATEGORY_ERROR(state, error) {
@@ -72,11 +81,10 @@ export default {
 
                 commit('FETCH_CATEGORIES_SUCCESS', {
                     categoriesList: response.data,
-                    total: response.headers['x-total-count']
+                    total: response.headers['x-total-count'],
                 });
-
             } catch (error) {
-                commit('FETCH_CATEGORIES_ERROR', error.message)
+                commit('FETCH_CATEGORIES_ERROR', error.message);
             }
         },
 
@@ -84,14 +92,14 @@ export default {
             try {
                 commit('FETCH_ADD_CATEGORY_REQUEST');
 
-                const response = await axios.post(`http://localhost:3000/categories`, category);
+                const response = await axios.post('/categories', category);
 
                 commit('FETCH_ADD_CATEGORY_SUCCESS');
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_ADD_CATEGORY_ERROR', error.message)
+                commit('FETCH_ADD_CATEGORY_ERROR', error.message);
+                return false;
             }
         },
 
@@ -99,30 +107,30 @@ export default {
             try {
                 commit('FETCH_DEL_CATEGORY_REQUEST');
 
-                const response = await axios.delete(`http://localhost:3000/categories/${id}`);
+                const response = await axios.delete(`/categories/${id}`);
 
-                commit('FETCH_DEL_CATEGORY_SUCCESS');
+                commit('FETCH_DEL_CATEGORY_SUCCESS', id);
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_DEL_CATEGORY_ERROR', error.message)
+                commit('FETCH_DEL_CATEGORY_ERROR', error.message);
+                return false;
             }
         },
 
-        async updateCategory({commit}, category) {
+        async updateCategory({ commit }, category) {
             try {
                 commit('FETCH_UPDATE_CATEGORY_REQUEST');
 
-                const response = await axios.put(`http://localhost:3000/books/${category.id}`, category);
+                const response = await axios.put(`/categories/${category.id}`, category);
 
-                commit('FETCH_UPDATE_CATEGORY_SUCCESS');
+                commit('FETCH_UPDATE_CATEGORY_SUCCESS', category);
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_UPDATE_CATEGORY_ERROR', error.message)
+                commit('FETCH_UPDATE_CATEGORY_ERROR', error.message);
+                return false;
             }
         },
     },
-}
+};

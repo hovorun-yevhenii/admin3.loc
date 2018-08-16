@@ -4,8 +4,8 @@
 
 <script>
     export default {
-        name: "NotFound"
-    }
+        name: 'NotFound',
+    };
 </script>
 
 <style lang="scss" scoped>
@@ -13,6 +13,6 @@
         min-height: 100vh;
         font: 15vmin/100vh fantasy;
         text-align: center;
-        color: crimson;
+        color: gray;
     }
 </style>

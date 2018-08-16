@@ -2,33 +2,33 @@
     <div class="dashboard">
         <Header/>
         <div class="content">
-            <el-menu background-color="#e6e6e6"
+            <transition name="sidebar">
+                <el-menu background-color="#e6e6e6"
                      :collapse="isNavCollapse"
-                     collapse-transition
-                     router>
-                <div class="el-menu__toggle" @click="isNavCollapse = !isNavCollapse"></div>
+                     :router="true">
+                <div class="el-menu__toggle" @click="onToggleMenu"></div>
 
-                <el-menu-item index="/categories/all">
-                    <i class="fa fa-list"></i>
-
+                <el-menu-item index="/categories">
+                    <i class="fa fa-list" :class="{ active : activeLink === 'categories' }"></i>
                     <span slot="title">Категории</span>
                 </el-menu-item>
 
-                <el-menu-item index="/users">
-                    <i class="fa fa-users"></i>
+                <el-menu-item index="/users" v-if="getCurrentUser.role === 'Senior Librarian'">
+                    <i class="fa fa-users" :class="{ active : activeLink === 'users' }"></i>
                     <span slot="title">Пользователи</span>
                 </el-menu-item>
 
-                <el-menu-item index="/books/all">
-                    <i class="fa fa-book"></i>
+                <el-menu-item index="/books">
+                    <i class="fa fa-book" :class="{ active : activeLink === 'books' }"></i>
                     <span slot="title">Книги</span>
                 </el-menu-item>
 
-                <el-menu-item index="/authors/all">
-                    <i class="fa fa-pen-nib"></i>
+                <el-menu-item index="/authors">
+                    <i class="fa fa-pen-nib" :class="{ active : activeLink === 'authors' }"></i>
                     <span slot="title">Авторы</span>
                 </el-menu-item>
             </el-menu>
+            </transition>
 
             <div class="main">
                 <router-view />
@@ -43,25 +43,53 @@
 </template>
 
 <script>
-    import Header from '../components/Header.vue'
-    import {mapGetters} from 'vuex'
+    import Header from './Header';
+    import { mapGetters } from 'vuex';
 
     export default {
-        name: "Dashboard",
+        name: 'Dashboard',
+
         data() {
             return {
                 isNavCollapse: true,
+                activeLink: '',
             };
         },
+
         computed: {
             ...mapGetters([
                 'isLoading',
-            ])
+                'getCurrentUser',
+                'routePath',
+            ]),
         },
+
+        watch: {
+            routePath() {
+                this.applyActiveLink();
+            },
+        },
+
+        methods: {
+            applyActiveLink() {
+                const match = ['categories', 'users', 'books', 'authors'].filter((path) => {
+                    return this.routePath.includes(path);
+                })[0];
+
+                this.activeLink = match[0];
+            },
+
+            onToggleMenu() {
+                this.isNavCollapse = !this.isNavCollapse;
+
+                this.applyActiveLink();
+            },
+        },
+
         components: {
-            Header
-        }
-    }
+            Header,
+        },
+    };
 </script>
 
 <style lang="scss">
@@ -71,6 +99,11 @@
         font-size: 26px;
         text-align: center;
         transition: .1s;
+    }
+
+    .content .fa.active {
+
+        color: #fa9;
     }
 
     .loader {
@@ -107,7 +140,7 @@
         min-width: calc(100% - 65px);
         padding: 24px;
         box-sizing: border-box;
-        transition: left .2s, width .2s;
+        transition: left .3s, width .3s;
     }
 
     .el-menu {
@@ -135,6 +168,7 @@
 
         &:not(.el-menu--collapse) {
             width: 200px;
+
 
             & ~ .main {
                 left: 200px;

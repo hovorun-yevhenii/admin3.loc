@@ -36,11 +36,19 @@
             </div>
         </div>
 
+        <div class="multi-actions" v-if="tableSelection.length">
+            <el-button type="danger" plain @click="handleMultiAction('multiDel')">
+                Delete selected users</el-button>
+            <el-button type="warning" plain @click="handleMultiAction('multiBun')">
+                Toggle bunstate of selected users</el-button>
+        </div>
+
         <el-table v-show="getUsers && getUsers.length"
                   v-if="!isLoading"
                   :data="getUsers"
                   ref="table"
-                  @sort-change="handleSort">
+                  @sort-change="handleSort"
+                  @selection-change="handleSelection">
 
             <el-table-column label="ID" width="45">
                 <template slot-scope="scope"><span>{{ scope.row.id }}</span></template>
@@ -62,7 +70,9 @@
 
             <el-table-column label="Avatar" width="70">
                 <template slot-scope="scope">
-                    <span class="avatar-wrapper"><img class="avatar" :src="scope.row.avatar" alt="avatar"></span>
+                    <span class="avatar-wrapper">
+                        <img class="avatar" :src="scope.row.avatar" alt="avatar">
+                    </span>
                 </template>
             </el-table-column>
 
@@ -75,11 +85,15 @@
             </el-table-column>
 
             <el-table-column label="Registered at" sortable="custom" prop="created_at" width="200">
-                <template slot-scope="scope"><span>{{ getTimeFormat(scope.row.created_at) }}</span></template>
+                <template slot-scope="scope">
+                    <span>{{ getTimeFormat(scope.row.created_at) }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Last visit" width="100">
-                <template slot-scope="scope"><span>hz</span></template>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.last_visit || '-' }}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Actions" width="180" ref="actions">
@@ -96,17 +110,28 @@
                                    size="mini"
                                    @click="handleDelete(scope.row.id, scope.row.name)"/>
                     </el-tooltip>
-                    <el-tooltip :content="(scope.row.blacklisted ? 'Restore ' : 'Bun ') + scope.row.name">
-                        <el-button :type="scope.row.blacklisted ? 'default' : 'warning'"
-                                   :icon="`el-icon-circle-${scope.row.blacklisted ? 'plus' : 'close'}-outline`"
-                                   size="mini"
-                                   @click="handleBun(scope.row)"/>
+                    <el-tooltip
+                    :content="(scope.row.blacklisted ? 'Restore ' : 'Bun ') + scope.row.name">
+
+                        <el-button
+                        :type="scope.row.blacklisted ? 'default' : 'warning'"
+                        :icon="`el-icon-circle-${scope.row.blacklisted ? 'plus' : 'close'}-outline`"
+                        size="mini"
+                        @click="handleBun(scope.row)"/>
+
                     </el-tooltip>
                 </template>
             </el-table-column>
 
             <el-table-column type="selection" width="50"></el-table-column>
         </el-table>
+
+        <div class="multi-actions" v-if="tableSelection.length">
+            <el-button type="danger" plain @click="handleMultiAction('multiDel')">
+                Delete selected users</el-button>
+            <el-button type="warning" plain @click="handleMultiAction('multiBun')">
+                Toggle bunstate of selected users</el-button>
+        </div>
 
         <div v-if="!getUsers || !getUsers.length" class="nothing-found">
             <p>Nothing found</p>
@@ -126,16 +151,13 @@
 </template>
 
 <script>
-    import {mapGetters} from 'vuex'
-    import {MessageBox} from 'element-ui'
-    import {Notification} from 'element-ui'
-    import {debounce} from 'underscore'
-    import {mapObject} from 'underscore'
-    import {clone} from 'underscore'
-    import moment from 'moment/src/moment';
+    import { mapGetters } from 'vuex';
+    import { Notification, MessageBox } from 'element-ui';
+    import { debounce, mapObject, clone } from 'underscore';
+    import moment from 'moment';
 
     export default {
-        name: "UserTable",
+        name: 'UserTable',
         data() {
             return {
                 dataQuery: {
@@ -144,9 +166,10 @@
                     _page: 1,
                     name_like: '',
                     surname_like: '',
-                    created_at_like: ''
-                }
-            }
+                    created_at_like: '',
+                },
+                tableSelection: [],
+            };
         },
 
         computed: {
@@ -156,7 +179,7 @@
                 'usersHaveNextPage',
                 'stateQuery',
                 'isLoading',
-            ])
+            ]),
         },
 
         watch: {
@@ -167,6 +190,29 @@
         },
 
         methods: {
+            handleSelection(rows) {
+                this.tableSelection = rows;
+            },
+
+            handleMultiAction(action) {
+                MessageBox.confirm('Are you sure?')
+                    .then(() => {
+                        const usersForServer = this.tableSelection.slice(0);
+
+                        this.$store.dispatch(action, usersForServer)
+                            .then(() => {
+                                if (this.getUsers.length === 1) {
+                                    this.discardQueries();
+                                } else {
+                                    this.fetchUsers();
+                                }
+
+                                this.tableSelection = [];
+                            });
+                    })
+                    .catch(() => false);
+            },
+
             applyRouterQuery() {
                 this.dataQuery._sort = this.stateQuery._sort || '';
                 this.dataQuery._order = this.stateQuery._order || '';
@@ -177,25 +223,24 @@
             },
 
             pushToRouter() {
-                this.$router.push({query: this.dataQuery});
+                this.$router.push({ query: this.dataQuery });
             },
 
             fetchUsers() {
-                let url = [
-                    `http://localhost:3000/users?`,
-                    `_page=${this.dataQuery._page}`,
+                const url = [
+                    `/users?_page=${this.dataQuery._page}`,
                     `&_sort=${this.dataQuery._sort}`,
                     `&_order=${this.dataQuery._order}`,
                     `&name_like=${this.dataQuery.name_like}`,
                     `&surname_like=${this.dataQuery.surname_like}`,
-                    `&created_at_like=${this.dataQuery.created_at_like}`
+                    `&created_at_like=${this.dataQuery.created_at_like}`,
                 ].join('');
 
                 this.$store.dispatch('fetchUsers', url)
                     .then(() => this.sortTable());
             },
-
-            handleSearch: debounce(function() {
+// eslint-disable-next-line
+            handleSearch: debounce(function () {
                 this.dataQuery._page = 1;
                 this.pushToRouter();
             }, 500),
@@ -210,8 +255,7 @@
                 }
 
                 if (this.dataQuery._order !== this.stateQuery._order ||
-                    this.dataQuery._sort  !== this.stateQuery._sort)
-                {
+                    this.dataQuery._sort !== this.stateQuery._sort) {
                     this.dataQuery._page = 1;
                     this.pushToRouter();
                 }
@@ -222,7 +266,7 @@
 
                 this.$refs.table.sort(
                     this.dataQuery._sort,
-                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending'
+                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending',
                 );
             },
 
@@ -246,29 +290,28 @@
                 MessageBox.confirm(
                     `This will permanently delete ${name}'s account. Continue?`,
                     'Warning',
-                    {confirmButtonText: 'OK', cancelButtonText: 'Cancel'})
+                    { confirmButtonText: 'OK', cancelButtonText: 'Cancel' },
+)
                     .then(() => this.$store.dispatch('deleteUser', id))
                     .then(() => {
                         if (this.getUsers.length === 1) {
-                            this.discardQueries()
+                            this.discardQueries();
                         } else {
                             this.fetchUsers();
                         }
                     })
-                    .catch(() => false)
+                    .catch(() => false);
             },
 
             handleBun(user) {
                 this.$store.dispatch('toggleUsersBunState', clone(user))
-                .then(result => {
+                .then((result) => {
                     if (result) {
                         Notification.info({
-                            title: `${user.name} is ${user.blacklisted ? '' : 'not'} blacklisted now`,
-                        })
+                            title: `${user.name} is ${user.blacklisted ? 'not' : ''} blacklisted now`,
+                        });
                     }
                 });
-
-                console.log(this.$refs.table)
             },
 
             getRoleColor(role) {
@@ -289,18 +332,23 @@
             },
 
             getTimeFormat(iso) {
-                return moment(iso).format('Do MMM YY')
-            }
+                return moment(iso).format('Do MMM YY');
+            },
         },
 
         created() {
             this.applyRouterQuery();
             this.fetchUsers();
-        }
-    }
+        },
+    };
 </script>
 
 <style lang="scss">
+    .multi-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
     .controls {
         display: flex;
         align-items: center;

@@ -12,15 +12,18 @@
                 <el-input v-model="form.name" placeholder="Gorgeous Fresh Pants"></el-input>
             </el-form-item>
 
-            <el-form-item label="Author" prop="author">
-                <el-input v-model="form.author" placeholder="ID or name?"></el-input>
+            <el-form-item label="Author ID" prop="author">
+                <el-input v-model="form.author" placeholder="48"></el-input>
             </el-form-item>
 
             <el-form-item label="Category" prop="category">
-                <el-select v-model="form.category" placeholder="please select category" value="Health">
-                    <el-option label="Music" value="Music"></el-option>
-                    <el-option label="Health" value="Health"></el-option>
-                    <el-option label="Computers" value="Computers"></el-option>
+                <el-select v-model="form.category" :value="form.category">
+                    <el-option
+                            v-for="(categoryItem, index) in categoriesList"
+                            :key="index"
+                            :label="categoryItem.name"
+                            :value="categoryItem.id">
+                    </el-option>
                 </el-select>
             </el-form-item>
 
@@ -29,7 +32,9 @@
             </el-form-item>
 
             <el-form-item label="Written at" prop="created_at">
-                <el-input-number v-model="form.created_at" :min="1200" :max="2018"></el-input-number>
+                <el-input-number v-model="form.created_at"
+                                 :min="1200" :max="2018">
+                </el-input-number>
             </el-form-item>
 
             <el-form-item label="Owner" prop="owner">
@@ -46,12 +51,14 @@
             </el-input>
 
             <el-upload action="" class="upload" :before-upload="beforeCoverUpload">
-                <img v-if="form.cover" :src="form.cover" class="upload-image">
+                <img v-if="form.image" :src="form.image" class="upload-image">
                 <i v-else class="el-icon-plus upload-icon"></i>
             </el-upload>
 
             <el-form-item class="controls">
-                <el-button type="primary" @click="onSubmit">{{ editMode ? 'Edit' : 'Create' }}</el-button>
+                <el-button type="primary"
+                           @click="onSubmit">{{ editMode ? 'Edit' : 'Create' }}
+                </el-button>
                 <el-button @click="resetForm">{{ editMode ? 'Discard' : 'Reset' }}</el-button>
             </el-form-item>
         </el-form>
@@ -59,12 +66,12 @@
 </template>
 
 <script>
-    import moment from 'moment/src/moment';
-    import {Notification} from 'element-ui';
+    import { Notification } from 'element-ui';
     import loaderValidator from '../../mixins/imageLoaderValidator';
+    import { mapGetters } from 'vuex';
 
     export default {
-        name: "BookForm",
+        name: 'BookForm',
         mixins: [loaderValidator],
         data() {
             return {
@@ -76,71 +83,105 @@
                     owner: '',
                     description: '',
                     created_at: '',
-                    cover: ''
+                    image: '',
                 },
                 rules: {
                     name: [
                         { required: true, message: 'Please input name', trigger: 'blur' },
-                        { min: 3, message: 'More then 3 symbols', trigger: 'blur' }
+                        { min: 3, message: 'More then 3 symbols', trigger: 'blur' },
                     ],
                     author: [
-                        { required: true, message: 'Please input author', trigger: 'blur' },
-                        { min: 1, message: 'More then 1 symbol', trigger: 'blur' }
+                        {
+                            required: true,
+                            message: 'Please input author\' id',
+                            trigger: 'blur',
+                        },
                     ],
                     category: [
-                        { required: true, message: 'Please input category', trigger: 'blur' }
+                        { required: true, message: 'Please input category', trigger: 'blur' },
                     ],
                     pages: [
-                        { type: 'number', required: true, message: 'Please input valid number', trigger: 'blur' }
+                        {
+                            type: 'number',
+                            required: true,
+                            message: 'Please input valid number',
+                            trigger: 'blur',
+                        },
                     ],
                     created_at: [
-                        { type: 'number', required: true, message: 'Please input valid number', trigger: 'blur' }
+                        {
+                            type: 'number',
+                            required: true,
+                            message: 'Please input valid number',
+                            trigger: 'blur',
+                        },
                     ],
                     owner: [
-                        { required: true, message: 'Please input owner', trigger: 'blur' }
+                        { required: true, message: 'Please input owner', trigger: 'blur' },
                     ],
                     description: [
                         { required: true, message: 'Please input description', trigger: 'blur' },
-                        { min: 10, message: 'More then 10 symbols', trigger: 'blur' }
-                    ]
-                }
-            }
+                        { min: 10, message: 'More then 10 symbols', trigger: 'blur' },
+                    ],
+                },
+            };
         },
 
         computed: {
             editMode() {
                 return this.$route.name === 'editBook';
             },
+            ...mapGetters([
+                'categoriesList',
+            ]),
         },
 
         methods: {
-            onSubmit() {
-                this.form.cover = this.form.cover || 'https://image.flaticon.com/icons/svg/167/167754.svg';
+            onUpdate() {
+                this.$store.dispatch('updateBook', this.form)
+                    .then((result) => {
+                        if (result) {
+                            Notification.info({ title: 'Book has been updated' });
+                        } else {
+                            Notification.error({ title: 'Something went wrong' });
+                        }
 
-                this.$refs['form'].validate((valid) => {
+                        this.$router.push({ path: '/books' });
+                    });
+            },
+
+            onCreate() {
+                this.$store.dispatch('addBook', this.form)
+                    .then((result) => {
+                        if (result) {
+                            Notification.info({ title: 'Book has been added' });
+                        } else {
+                            Notification.error({ title: 'Something went wrong' });
+                        }
+                        this.$router.push({ path: '/books' });
+                    });
+            },
+
+            onSubmit() {
+                this.form.image = this.form.image || 'https://image.flaticon.com/icons/svg/167/167754.svg';
+
+                this.$refs.form.validate((valid) => {
                     if (!valid) return;
 
-                    const restMethod = this.editMode ? 'updateBook' : 'addBook';
-
-                    this.$store.dispatch(restMethod, this.form)
-                        .then(result => {
-                            if (result) {
-                                Notification.info({ title: `Book has been ${this.editMode ? 'updated' : 'added'}` })
-                            } else {
-                                Notification.error({ title: 'Something went wrong' })
-                            }
-
-                            this.$router.push({path: '/books'})
-                        })
+                    if (this.editMode) {
+                        this.onUpdate();
+                    } else {
+                        this.onCreate();
+                    }
                 });
             },
 
             resetForm() {
                 if (this.editMode) {
                     this.$store.dispatch('fetchBookById', this.$route.params.id)
-                        .then(response => Object.assign(this.form, response.data))
+                        .then(response => Object.assign(this.form, response.data));
                 } else {
-                    this.$refs['form'].resetFields();
+                    this.$refs.form.resetFields();
                     this.form.avatar = null;
                 }
             },
@@ -148,8 +189,10 @@
             beforeCoverUpload(cover) {
                 this.validateLoadingImage(cover)
                     .then(
-                        image => this.form.cover = image,
-                        error =>  Notification.error({ title: `You may upload png or jpeg file 2MB max`})
+                        (img) => {
+                            this.form.image = img;
+                        },
+                        () => Notification.error({ title: 'You may upload png or jpeg file 2MB max' }),
                     );
 
                 return false;
@@ -159,17 +202,17 @@
         created() {
             if (this.editMode) {
                 this.$store.dispatch('fetchBookById', this.$route.params.id)
-                    .then(response => Object.assign(this.form, response.data))
+                    .then(response => Object.assign(this.form, response.data));
             }
-        }
-    }
+        },
+    };
 </script>
 
 <style lang="scss" scoped>
     @import "../../assets/css/uploader";
 
-    .create-book {
-        padding-top: 60px;
+    .book-form {
+        padding-top: 100px;
     }
 
     .cover {

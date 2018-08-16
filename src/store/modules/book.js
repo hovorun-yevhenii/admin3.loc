@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios from '../myAxios';
+import moment from 'moment';
 
 export default {
     state: {
@@ -7,6 +8,10 @@ export default {
         isLoading: false,
         networkError: null,
         tableLimit: 10,
+        updatedBooks: {
+            users: [],
+            notes: [],
+        },
     },
 
     getters: {
@@ -32,7 +37,14 @@ export default {
         FETCH_ADD_BOOK_REQUEST(state) {
             state.isLoading = true;
         },
-        FETCH_ADD_BOOK_SUCCESS(state) {
+        FETCH_ADD_BOOK_SUCCESS(state, event) {
+            console.log(`${event.user} ${event.action} book "${event.book}" at ${event.time}`);
+
+            state.updatedBooks.notes.push({
+                message: `${event.user} ${event.action} book "${event.book}" at ${event.time}`,
+                time: moment().toISOString(),
+            });
+
             state.isLoading = false;
         },
         FETCH_ADD_BOOK_ERROR(state, error) {
@@ -43,7 +55,14 @@ export default {
         FETCH_DEL_BOOK_REQUEST(state) {
             state.isLoading = true;
         },
-        FETCH_DEL_BOOK_SUCCESS(state) {
+        FETCH_DEL_BOOK_SUCCESS(state, event) {
+            console.log(`${event.user} ${event.action} book "${event.book}" at ${event.time}`);
+
+            state.updatedBooks.notes.push({
+                message: `${event.user} ${event.action} book "${event.book}" at ${event.time}`,
+                time: moment().toISOString(),
+            });
+
             state.isLoading = false;
         },
         FETCH_DEL_BOOK_ERROR(state, error) {
@@ -54,7 +73,12 @@ export default {
         FETCH_UPDATE_BOOK_REQUEST(state) {
             state.isLoading = true;
         },
-        FETCH_UPDATE_BOOK_SUCCESS(state) {
+        FETCH_UPDATE_BOOK_SUCCESS(state, event) {
+            state.updatedBooks.notes.push({
+                message: `${event.user} ${event.action} book "${event.book}" at ${event.time}`,
+                time: moment().toISOString(),
+            });
+
             state.isLoading = false;
         },
         FETCH_UPDATE_BOOK_ERROR(state, error) {
@@ -72,6 +96,31 @@ export default {
             state.isLoading = false;
             state.networkError = error;
         },
+        RESET_BADGE(state, user) {
+            state.updatedBooks.users[user] = moment().toISOString();
+        },
+        /* MULTI DEL */
+        FETCH_MULTI_DEL_BOOK_REQUEST(state) {
+            state.isLoading = true;
+        },
+        FETCH_MULTI_DEL_BOOK_SUCCESS(state, event) {
+            const message = [
+                `${event.user} deleted `,
+                `${event.amount} book${event.amount > 1 ? 's' : ''} `,
+                `at ${event.time}`,
+            ].join('');
+
+            state.updatedBooks.notes.push({
+                message,
+                time: moment().toISOString(),
+            });
+
+            state.isLoading = false;
+        },
+        FETCH_MULTI_DEL_BOOK_ERROR(state, error) {
+            state.isLoading = false;
+            state.networkError = error;
+        },
     },
 
     actions: {
@@ -83,71 +132,121 @@ export default {
 
                 commit('FETCH_BOOKS_SUCCESS', {
                     booksList: response.data,
-                    total: response.headers['x-total-count']
+                    total: response.headers['x-total-count'],
                 });
-
             } catch (error) {
-                commit('FETCH_BOOKS_ERROR', error.message)
+                commit('FETCH_BOOKS_ERROR', error.message);
             }
         },
 
-        async addBook({commit}, book) {
+        async addBook({ commit, rootState }, book) {
             try {
                 commit('FETCH_ADD_BOOK_REQUEST');
 
-                const response = await axios.post(`http://localhost:3000/books`, book);
+                const response = await axios.post('/books', book);
+                const user = rootState.user.currentUser;
 
-                commit('FETCH_ADD_BOOK_SUCCESS');
+                commit('FETCH_ADD_BOOK_SUCCESS', {
+                    user: `${user.name} ${user.surname}`,
+                    time: moment().format('MMMM Do YYYY'),
+                    action: 'added',
+                    book: book.name,
+                });
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_ADD_BOOK_ERROR', error.message)
+                commit('FETCH_ADD_BOOK_ERROR', error.message);
+                return false;
             }
         },
 
-        async deleteBook({commit}, id) {
+        async deleteBook({ commit, rootState }, book) {
             try {
                 commit('FETCH_DEL_BOOK_REQUEST');
 
-                const response = await axios.delete(`http://localhost:3000/books/${id}`);
+                const response = await axios.delete(`/books/${book.id}`);
+                const user = rootState.user.currentUser;
 
-                commit('FETCH_DEL_BOOK_SUCCESS');
+                commit('FETCH_DEL_BOOK_SUCCESS', {
+                    user: `${user.name} ${user.surname}`,
+                    time: moment().format('MMMM Do YYYY'),
+                    action: 'deleted',
+                    book: book.name,
+                });
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_DEL_BOOK_ERROR', error.message)
+                commit('FETCH_DEL_BOOK_ERROR', error.message);
+                return false;
             }
         },
 
-        async updateBook({commit}, book) {
+        async updateBook({ commit, rootState }, book) {
             try {
                 commit('FETCH_UPDATE_BOOK_REQUEST');
 
-                const response = await axios.put(`http://localhost:3000/books/${book.id}`, book);
+                const response = await axios.put(`/books/${book.id}`, book);
+                const user = rootState.user.currentUser;
 
-                commit('FETCH_UPDATE_BOOK_SUCCESS');
+                commit('FETCH_UPDATE_BOOK_SUCCESS', {
+                    user: `${user.name} ${user.surname}`,
+                    time: moment().format('MMMM Do YYYY'),
+                    action: 'updated',
+                    book: book.name,
+                });
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_UPDATE_BOOK_ERROR', error.message)
+                console.dir(error);
+                commit('FETCH_UPDATE_BOOK_ERROR', error.message);
+                return false;
             }
         },
-        async fetchBookById({commit}, id) {
+
+        async fetchBookById({ commit }, id) {
             try {
                 commit('FETCH_BOOK_BY_ID_REQUEST');
 
-                const response = await axios.get(`http://localhost:3000/books/${id}`);
+                const response = await axios.get(`/books/${id}`);
 
                 commit('FETCH_BOOK_BY_ID_SUCCESS');
 
                 return response;
-
             } catch (error) {
-                commit('FETCH_BOOK_BY_ID_ERROR', error.message)
+                commit('FETCH_BOOK_BY_ID_ERROR', error.message);
+                return false;
+            }
+        },
+
+        resetBadge({ commit }, user) {
+            commit('RESET_BADGE', user);
+        },
+
+        async multiBooksDel({ commit, rootState }, books) {
+            try {
+                commit('FETCH_MULTI_DEL_BOOK_REQUEST');
+
+                const promises = [];
+
+                books.forEach((book) => {
+                    promises.push(axios.delete(`/books/${book.id}`));
+                });
+
+                await axios.all(promises);
+
+                const user = rootState.user.currentUser;
+
+                commit('FETCH_MULTI_DEL_BOOK_SUCCESS', {
+                    user: `${user.name} ${user.surname}`,
+                    time: moment().format('MMMM Do YYYY'),
+                    amount: books.length,
+                });
+
+                return true;
+            } catch (error) {
+                commit('FETCH_MULTI_DEL_BOOK_ERROR', error.message);
+                return false;
             }
         },
     },
-}
+};

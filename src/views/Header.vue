@@ -5,18 +5,19 @@
             <p class="logo__name">BOOKS</p>
         </router-link>
 
-        <div class="updated-books">
+        <div class="updated-books"
+             v-if="getCurrentUser.role === 'Senior Librarian'"
+             @click="resetBadge">
             <el-dropdown trigger="click">
               <span class="el-dropdown-link"> Updated Books
-                  <el-badge class="mark" :value="2"/>
+                  <el-badge class="mark" v-if="badgeValue" :value="badgeValue"/>
                   <i class="el-icon-arrow-down"></i>
               </span>
-                <el-dropdown-menu slot="dropdown">
-                    <el-dropdown-item class="badger-item">
-                        <span>6th Aug 18 Ewaldino Marks added book "Refined Soft Tuna"</span>
-                    </el-dropdown-item>
-                    <el-dropdown-item class="badger-item">
-                        <span>4th Aug 18 Rafael Rice deleted book "Incredible Metal Car"</span>
+                <el-dropdown-menu slot="dropdown" class="badger">
+                    <el-dropdown-item class="badger-item"
+                                      v-for="note in notifications.notes.slice().reverse()"
+                                      :key="note.time">
+                        <div class="badger-item" v-text="note.message"></div>
                     </el-dropdown-item>
                 </el-dropdown-menu>
             </el-dropdown>
@@ -24,7 +25,7 @@
 
         <el-dropdown trigger="click" class="drop-down">
             <div class="el-dropdown-link">
-                <p class="drop-down__name">{{getCurrentUser.role}} {{getCurrentUser.name}}</p>
+                <p class="drop-down__name">{{getCurrentUser.role + ' ' + getCurrentUser.name}}</p>
                 <div class="drop-down__avatar-wrapper">
                     <img class="drop-down__avatar" :src="getCurrentUser.avatar" alt="avatar">
                 </div>
@@ -33,7 +34,7 @@
 
             <el-dropdown-menu slot="dropdown">
                 <el-dropdown-item>
-                    <router-link :to="{name: 'editUser', params: { id: getCurrentUser.id, user: getCurrentUser }}">
+                    <router-link :to="{ name: 'editUser', params: { id: getCurrentUser.id } }">
                         Profile
                     </router-link>
                 </el-dropdown-item>
@@ -46,28 +47,74 @@
 </template>
 
 <script>
-    import {mapGetters} from 'vuex'
+    import { mapGetters } from 'vuex';
+    import moment from 'moment';
 
     export default {
-        name: "Header",
+        name: 'Header',
         computed: {
             ...mapGetters([
                 'getCurrentUser',
+                'notifications',
             ]),
         },
+
+        data() {
+            return {
+                badgeValue: null,
+            };
+        },
+
         methods: {
+            resetBadge() {
+                this.$store.dispatch('resetBadge', this.getCurrentUser.id)
+                    .then(() => {
+                        this.badgeValue = 0;
+                    });
+            },
+
             logOut() {
-                this.$store.dispatch('logout').then(() => this.$router.push({path: '/login'}))
-            }
-        }
-    }
+                this.$store.dispatch('logout').then(() => this.$router.push({ path: '/login' }));
+            },
+        },
+        created() {
+            const lastWatch = this.notifications.users[this.getCurrentUser.id];
+
+            this.notifications.notes.forEach((note) => {
+                if (moment(note.time).isAfter(lastWatch)) this.badgeValue += 1;
+            });
+        },
+    };
 </script>
 
-<style lang="scss" scoped>
-    .el-dropdown-menu__item span {
-        border-bottom: 1px solid #ccc;
+<style lang="scss">
+    .el-dropdown-menu__item div {
+        font-size: 16px;
+        text-transform: none !important;
     }
-    
+
+
+    li:nth-of-type(even) {
+        background-color: #EBEEF5;
+    }
+
+
+    .el-dropdown-menu__item {
+        padding: 0;
+        a,
+        p {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            text-transform: uppercase;
+        }
+    }
+
+    .badger {
+        height: 300px;
+        overflow: auto;
+    }
+
     .header {
         position: fixed;
         top: 0;
@@ -101,10 +148,6 @@
                 position: absolute;
                 top: -24px;
                 right: -24px;
-            }
-
-            .badger-item span{
-                border-bottom: 10px solid red;
             }
         }
 

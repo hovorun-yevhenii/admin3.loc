@@ -1,7 +1,12 @@
 <template>
     <div class="login-page">
-
-        <p style="position: absolute; top: -90px; opacity: .1;">Mekhi26@yahoo.com <br> daqgE</p>
+        <div class="logAs">
+            <el-button type="info" plain @click="logAs('Reader')">Log in as Reader</el-button>
+            <el-button type="success"
+                       plain
+                       @click="logAs('Librarian')">Log in as Librarian</el-button>
+            <el-button type="danger" plain @click="logAs('Senior')">Log in as Senior</el-button>
+        </div>
 
         <el-form :model="form"
                  ref="form"
@@ -22,7 +27,7 @@
                                 trigger: 'blur'
                              }
                           ]">
-                <el-input type="text" v-model="form.email" />
+                <el-input type="text" @input="validationReset" v-model="form.email" />
             </el-form-item>
 
             <el-form-item label="Password"
@@ -32,9 +37,12 @@
                             message: 'Please input password',
                             trigger: 'blur',
                             }">
-                <el-input type="password" v-model="form.password" auto-complete="off" />
+                <el-input type="password"
+                          v-model="form.password"
+                          @input="validationReset"
+                          auto-complete="off" />
             </el-form-item>
-
+            <span class="el-form-item__error" v-if="userErrorText" v-text="userErrorText"></span>
             <el-form-item>
                 <el-button type="primary" @click="submitForm()">Log in</el-button>
             </el-form-item>
@@ -44,39 +52,80 @@
 
 <script>
     export default {
-        name: "LoginForm",
+        name: 'LoginForm',
         data() {
             return {
                 form: {
                     email: '',
                     password: '',
                 },
+                userErrorText: null,
             };
         },
         methods: {
+            logAs(role) {
+                switch (role) {
+                    case 'Reader':
+                        this.form.email = 'Arnoldo.Jerde@yahoo.com';
+                        this.form.password = 'RP92F';
+                        break;
+                    case 'Librarian':
+                        this.form.email = 'Lemuel53@yahoo.com';
+                        this.form.password = 'MXIo5';
+                        break;
+                    default:
+                        this.form.email = 'Adonis_Cruickshank@hotmail.com';
+                        this.form.password = 'ogjEG';
+                }
+
+                this.submitForm();
+            },
+
+            validationReset() {
+                this.userErrorText = null;
+            },
+
             submitForm() {
                 this.$refs.form.validate((valid) => {
-                    if (valid) {
-                        this.$store.dispatch({
-                            type: 'login',
-                            email: this.form.email,
-                            password: this.form.password,
-                        }).then(result => {
-                            if (result) this.$router.push({ path: 'categories/all' })
-                        });
-                    } else return false;
+                    if (!valid) return;
+
+                    this.$store.dispatch('login', {
+                        email: this.form.email,
+                        password: this.form.password,
+                    }).then((result) => {
+                        if (result.success) {
+                            this.$router.push({ path: 'categories/all' });
+                        } else this.userErrorText = result.message;
+                    });
                 });
             },
-        }
-    }
+        },
+    };
 </script>
 
 <style lang="scss" scoped>
+    .logAs {
+        position: absolute;
+        bottom: -150px;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+
+        & > * {
+            margin: 0 20px;
+        }
+    }
+
     .login-page {
         display: flex;
         align-items: center;
         justify-content: center;
         transform: translateY(100%);
+    }
+
+    .el-form-item__error {
+        width: 100%;
+        text-align: center;
     }
 
     .form {
