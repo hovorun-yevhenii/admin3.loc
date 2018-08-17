@@ -67,6 +67,7 @@
 
 <script>
     import { Notification } from 'element-ui';
+    import { extend } from 'underscore';
     import loaderValidator from '../../mixins/imageLoaderValidator';
     import { mapGetters } from 'vuex';
 
@@ -142,11 +143,10 @@
                     .then((result) => {
                         if (result) {
                             Notification.info({ title: 'Book has been updated' });
+                            this.$router.push({ path: '/books' });
                         } else {
                             Notification.error({ title: 'Something went wrong' });
                         }
-
-                        this.$router.push({ path: '/books' });
                     });
             },
 
@@ -155,10 +155,10 @@
                     .then((result) => {
                         if (result) {
                             Notification.info({ title: 'Book has been added' });
+                            this.$router.push({ path: '/books' });
                         } else {
                             Notification.error({ title: 'Something went wrong' });
                         }
-                        this.$router.push({ path: '/books' });
                     });
             },
 
@@ -179,7 +179,7 @@
             resetForm() {
                 if (this.editMode) {
                     this.$store.dispatch('fetchBookById', this.$route.params.id)
-                        .then(response => Object.assign(this.form, response.data));
+                        .then(response => extend(this.form, response.data));
                 } else {
                     this.$refs.form.resetFields();
                     this.form.avatar = null;
@@ -202,7 +202,7 @@
         created() {
             if (this.editMode) {
                 this.$store.dispatch('fetchBookById', this.$route.params.id)
-                    .then(response => Object.assign(this.form, response.data));
+                    .then(response => extend(this.form, response.data));
             }
         },
     };

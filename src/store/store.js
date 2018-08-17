@@ -34,7 +34,6 @@ export default new Vuex.Store({
     plugins: [vuexLocal.plugin],
 
     getters: {
-        routePath: state => state.route.path,
         stateQuery: state => state.route.query,
         categoriesList: state => state.category.categoriesList,
         notifications: state => state.book.updatedBooks,

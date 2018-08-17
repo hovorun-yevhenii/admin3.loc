@@ -41,6 +41,7 @@
 
 <script>
     import { Notification } from 'element-ui';
+    import { extend } from 'underscore';
     import countries from '../../assets/countries';
 
     export default {
@@ -89,11 +90,10 @@
                         .then((result) => {
                             if (result) {
                                 Notification.info({ title: `author has been ${this.editMode ? 'updated' : 'added'}` });
+                                this.$router.push({ path: '/authors' });
                             } else {
                                 Notification.error({ title: 'Something went wrong' });
                             }
-
-                            this.$router.push({ path: '/authors' });
                         });
                 });
             },
@@ -101,7 +101,7 @@
             resetForm() {
                 if (this.editMode) {
                     this.$store.dispatch('fetchAuthorById', this.$route.params.id)
-                        .then(response => Object.assign(this.form, response.data));
+                        .then(response => extend(this.form, response.data));
                 } else {
                     this.$refs.form.resetFields();
                 }
@@ -111,7 +111,7 @@
         created() {
             if (this.editMode) {
                 this.$store.dispatch('fetchAuthorById', this.$route.params.id)
-                    .then(response => Object.assign(this.form, response.data));
+                    .then(response => extend(this.form, response.data));
             }
         },
 

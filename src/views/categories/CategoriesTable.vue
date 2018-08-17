@@ -53,6 +53,7 @@
 <script>
     import { mapGetters } from 'vuex';
     import { MessageBox, Notification } from 'element-ui';
+    import { extend } from 'underscore';
 
     export default {
         name: 'CategoriesTable',
@@ -86,12 +87,12 @@
         },
 
         methods: {
-            snapshotCategories() {
+            preparetCategories() {
                 this.treeData = [];
 
                 this.getCategories.forEach((category) => {
                     if (!category.parent_id) {
-                        Object.assign(category, { children: [] });
+                        extend(category, { children: [] });
                         this.treeData.push(category);
                     }
                 });
@@ -107,7 +108,7 @@
 
             fetchCategories() {
                 this.$store.dispatch('fetchCategories', '/categories')
-                    .then(() => this.snapshotCategories());
+                    .then(() => this.preparetCategories());
             },
 
             handleEdit(category = {}) {
@@ -122,7 +123,7 @@
                     },
                 )
                     .then((input) => {
-                        const updatedCategory = Object.assign(
+                        const updatedCategory = extend(
                             category,
                             { name: input.value },
                         );
@@ -144,7 +145,7 @@
                         .then((result) => {
                             if (result) {
                                 Notification.info({ title: 'Category has been deleted' });
-                                this.snapshotCategories();
+                                this.preparetCategories();
                             } else {
                                 Notification.error({ title: 'Something went wrong' });
                             }

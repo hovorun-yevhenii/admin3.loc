@@ -1,5 +1,7 @@
 import moment from 'moment';
+import Vue from 'vue';
 import axios from '../myAxios';
+import { extend } from 'underscore';
 
 export default {
     state: {
@@ -30,6 +32,7 @@ export default {
         },
         LOGIN_SUCCESS(state, user) {
             state.currentUser = user;
+            // undefined
             state.isLoading = false;
         },
         FETCH_LOGIN_ERROR(state, error) {
@@ -158,6 +161,11 @@ export default {
                 }
 
                 commit('LOGIN_SUCCESS', user);
+
+                if (user.role === 'Senior Librarian' && !user.last_visit) {
+                    commit('RESET_BADGE', user.id, { root: true });
+                }
+
                 return { success: true };
             } catch (error) {
                 commit('FETCH_LOGIN_ERROR', error);
@@ -166,10 +174,10 @@ export default {
         },
 
         logout({ state, commit, dispatch }) {
-            const updatedUser = Object.assign(
+            const updatedUser = extend(
                 state.currentUser,
                 {
-                    last_visit: moment().format('Do MMM YY'),
+                    last_visit: moment().format(Vue.prototype.$constants.DATE_DEF_FORMAT),
                 },
             );
 
@@ -256,10 +264,7 @@ export default {
             try {
                 commit('FETCH_BUN_USER_REQUEST');
 
-                Object.assign(
-                    user,
-                    { blacklisted: !user.blacklisted },
-                );
+                extend(user, { blacklisted: !user.blacklisted });
 
                 const response = await axios.put(`/users/${user.id}`, user);
 
@@ -279,7 +284,7 @@ export default {
                 const promises = [];
 
                 users.forEach((user) => {
-                    Object.assign(user, { blacklisted: !user.blacklisted });
+                    extend(user, { blacklisted: !user.blacklisted });
                     promises.push(axios.put(`/users/${user.id}`, user));
                 });
 

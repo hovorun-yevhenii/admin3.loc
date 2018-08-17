@@ -1,1 +1,5 @@
-export const MY_TEST = 1.618;
+export default {
+    DATE_DEF_FORMAT: 'Do MMM YY',
+    SORT_ASCENDING: 'ascending',
+    SORT_DESCENDING: 'descending',
+};

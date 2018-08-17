@@ -6,12 +6,13 @@ import store from './store/store';
 import 'element-ui/lib/theme-chalk/index.css';
 import ElementUI from 'element-ui';
 import locale from 'element-ui/lib/locale/lang/en';
+import constants from './assets/constants';
 
 Vue.use(ElementUI, { locale });
-
-Vue.config.productionTip = false;
 sync(store, router);
 
+Vue.config.productionTip = false;
+Vue.prototype.$constants = constants;
 
 router.beforeEach((to, from, next) => {
     if (to.name === 'editUser' && +to.params.id !== store.state.user.currentUser.id) {

@@ -74,7 +74,9 @@
             </el-table-column>
 
             <el-table-column label="Owner" width="100">
-                <template slot-scope="scope"><span>{{ scope.row.owner }}</span></template>
+                <template slot-scope="scope">
+                    <span>{{ scope.row.owner ? `User ${scope.row.owner}` : 'Library'}}</span>
+                </template>
             </el-table-column>
 
             <el-table-column label="Description" width="600">
@@ -222,7 +224,7 @@
 
                 this.$refs.table.sort(
                     this.dataQuery._sort,
-                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending',
+                    this.dataQuery._order === 'asc' ? this.$constants.SORT_ASCENDING : this.$constants.SORT_DESCENDING,
                 );
             },
 
@@ -245,7 +247,7 @@
                     this.dataQuery._order = '';
                 } else {
                     this.dataQuery._sort = event.prop;
-                    this.dataQuery._order = event.column.order === 'ascending' ? 'asc' : 'desc';
+                    this.dataQuery._order = event.column.order === this.$constants.SORT_ASCENDING ? 'asc' : 'desc';
                 }
 
                 if (this.dataQuery._order !== this.stateQuery._order ||
@@ -285,7 +287,7 @@
             },
 
             getTimeFormat(iso) {
-                return moment(iso).format('Do MMM YY');
+                return moment(iso).format(this.$constants.DATE_DEF_FORMAT);
             },
         },
 

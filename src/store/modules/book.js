@@ -1,4 +1,5 @@
 import axios from '../myAxios';
+import Vue from 'vue';
 import moment from 'moment';
 
 export default {
@@ -9,7 +10,7 @@ export default {
         networkError: null,
         tableLimit: 10,
         updatedBooks: {
-            users: [],
+            users: {},
             notes: [],
         },
     },
@@ -38,8 +39,6 @@ export default {
             state.isLoading = true;
         },
         FETCH_ADD_BOOK_SUCCESS(state, event) {
-            console.log(`${event.user} ${event.action} book "${event.book}" at ${event.time}`);
-
             state.updatedBooks.notes.push({
                 message: `${event.user} ${event.action} book "${event.book}" at ${event.time}`,
                 time: moment().toISOString(),
@@ -56,8 +55,6 @@ export default {
             state.isLoading = true;
         },
         FETCH_DEL_BOOK_SUCCESS(state, event) {
-            console.log(`${event.user} ${event.action} book "${event.book}" at ${event.time}`);
-
             state.updatedBooks.notes.push({
                 message: `${event.user} ${event.action} book "${event.book}" at ${event.time}`,
                 time: moment().toISOString(),
@@ -148,7 +145,7 @@ export default {
 
                 commit('FETCH_ADD_BOOK_SUCCESS', {
                     user: `${user.name} ${user.surname}`,
-                    time: moment().format('MMMM Do YYYY'),
+                    time: moment().format(Vue.prototype.$constants.DATE_DEF_FORMAT),
                     action: 'added',
                     book: book.name,
                 });
@@ -169,7 +166,7 @@ export default {
 
                 commit('FETCH_DEL_BOOK_SUCCESS', {
                     user: `${user.name} ${user.surname}`,
-                    time: moment().format('MMMM Do YYYY'),
+                    time: moment().format(Vue.prototype.$constants.DATE_DEF_FORMAT),
                     action: 'deleted',
                     book: book.name,
                 });
@@ -190,14 +187,13 @@ export default {
 
                 commit('FETCH_UPDATE_BOOK_SUCCESS', {
                     user: `${user.name} ${user.surname}`,
-                    time: moment().format('MMMM Do YYYY'),
+                    time: moment().format(Vue.prototype.$constants.DATE_DEF_FORMAT),
                     action: 'updated',
                     book: book.name,
                 });
 
                 return response;
             } catch (error) {
-                console.dir(error);
                 commit('FETCH_UPDATE_BOOK_ERROR', error.message);
                 return false;
             }
@@ -238,7 +234,7 @@ export default {
 
                 commit('FETCH_MULTI_DEL_BOOK_SUCCESS', {
                     user: `${user.name} ${user.surname}`,
-                    time: moment().format('MMMM Do YYYY'),
+                    time: moment().format(Vue.prototype.$constants.DATE_DEF_FORMAT),
                     amount: books.length,
                 });
 

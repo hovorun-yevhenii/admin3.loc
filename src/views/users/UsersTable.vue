@@ -251,7 +251,7 @@
                     this.dataQuery._order = '';
                 } else {
                     this.dataQuery._sort = event.prop;
-                    this.dataQuery._order = event.column.order === 'ascending' ? 'asc' : 'desc';
+                    this.dataQuery._order = event.column.order === this.$constants.SORT_ASCENDING ? 'asc' : 'desc';
                 }
 
                 if (this.dataQuery._order !== this.stateQuery._order ||
@@ -266,7 +266,7 @@
 
                 this.$refs.table.sort(
                     this.dataQuery._sort,
-                    this.dataQuery._order === 'asc' ? 'ascending' : 'descending',
+                    this.dataQuery._order === 'asc' ? this.$constants.SORT_ASCENDING : this.$constants.SORT_DESCENDING,
                 );
             },
 
@@ -287,11 +287,7 @@
             },
 
             handleDelete(id, name) {
-                MessageBox.confirm(
-                    `This will permanently delete ${name}'s account. Continue?`,
-                    'Warning',
-                    { confirmButtonText: 'OK', cancelButtonText: 'Cancel' },
-)
+                MessageBox.confirm(`This will permanently delete ${name}'s account. Continue?`)
                     .then(() => this.$store.dispatch('deleteUser', id))
                     .then(() => {
                         if (this.getUsers.length === 1) {
@@ -332,7 +328,7 @@
             },
 
             getTimeFormat(iso) {
-                return moment(iso).format('Do MMM YY');
+                return moment(iso).format(this.$constants.DATE_DEF_FORMAT);
             },
         },
 

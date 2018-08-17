@@ -63,6 +63,7 @@
 <script>
     import { mask } from 'vue-the-mask';
     import moment from 'moment';
+    import { extend } from 'underscore';
     import { Notification } from 'element-ui';
     import loaderValidator from '../../mixins/imageLoaderValidator';
     import { mapGetters } from 'vuex';
@@ -142,7 +143,7 @@
 
                     const restMethod = this.editMode ? 'updateUser' : 'addUser';
                     const user = this.editMode ? this.form :
-                            Object.assign(
+                            extend(
                                 this.form,
                                 { created_at: moment().toISOString() },
                                 { blacklisted: false },
@@ -152,11 +153,10 @@
                         .then((result) => {
                             if (result) {
                                 Notification.info({ title: `User has been ${this.editMode ? 'updated' : 'added'}` });
+                                this.$router.push({ path: '/users' });
                             } else {
                                 Notification.error({ title: 'Something went wrong' });
                             }
-
-                            this.$router.push({ path: '/users' });
                         });
                 });
             },
@@ -164,7 +164,7 @@
             resetForm() {
                 if (this.editMode) {
                     this.$store.dispatch('fetchUserById', this.$route.params.id)
-                        .then(response => Object.assign(this.form, response.data));
+                        .then(response => extend(this.form, response.data));
                 } else {
                     this.$refs.form.resetFields();
                     this.form.avatar = null;
@@ -186,7 +186,7 @@
             },
             fetchUser() {
                 this.$store.dispatch('fetchUserById', this.$route.params.id)
-                    .then(response => Object.assign(this.form, response.data));
+                    .then(response => extend(this.form, response.data));
             },
         },
 
